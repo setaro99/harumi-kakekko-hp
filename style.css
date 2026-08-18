@@ -26,7 +26,13 @@
 
 /* ---------- リセット・ベース ---------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden; /* clip未対応の旧ブラウザ向けフォールバック */
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 body {
   font-family: var(--font-body);
   color: var(--c-ink);
@@ -43,6 +49,8 @@ ul, ol { list-style: none; }
 .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 .container-narrow { max-width: 860px; }
 .pc-only { display: inline; }
+/* 日本語の改行制御：.nb で囲んだフレーズの途中では改行しない */
+.nb { display: inline-block; }
 
 section { scroll-margin-top: calc(var(--header-h) + 12px); }
 .section { padding: 92px 0; }
@@ -188,7 +196,7 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
 }
 .hero-inner {
   display: grid;
-  grid-template-columns: 1.02fr 1fr;
+  grid-template-columns: 1.1fr 1fr;
   align-items: center;
   gap: 36px;
   padding-top: 64px;
@@ -209,12 +217,11 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
 .hero-title {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: clamp(29px, 4.4vw, 46px);
-  line-height: 1.42;
+  font-size: clamp(27px, 2.9vw, 37px);
+  line-height: 1.5;
   letter-spacing: 0.01em;
 }
-.hero-title-line { display: block; }
-.hero-title-line.accent {
+.hero-title-accent {
   color: var(--c-primary-dark);
   background: linear-gradient(transparent 68%, #FFE28A 68%);
   display: inline-block;
@@ -919,11 +926,19 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
   padding: 13px 15px;
   border: 2px solid #EADFD2;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: 16px; /* 16px未満だとiOS Safariがフォーカス時に自動ズームする */
   font-family: var(--font-body);
   color: var(--c-ink);
   background: #FFFDFA;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23F97316' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 44px;
 }
 .form-field input:focus,
 .form-field select:focus,
@@ -1311,13 +1326,19 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
 /* =========================================================
    レスポンシブ
 ========================================================= */
+@media (max-width: 1200px) {
+  /* ハンバーガー切替（920px）までナビが収まるよう圧縮 */
+  .global-nav a:not(.btn) { padding: 8px 8px; font-size: 13.5px; }
+  .nav-cta .btn { padding: 9px 16px; font-size: 13.5px; }
+}
+
 @media (max-width: 1024px) {
   .pillar-grid { gap: 20px; }
   .price-grid { grid-template-columns: repeat(2, 1fr); }
   .flow-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 920px) {
+@media (max-width: 1000px) {
   :root { --header-h: 62px; }
   .section { padding: 68px 0; }
 
@@ -1327,10 +1348,11 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
     top: 0;
     right: 0;
     width: min(320px, 84vw);
+    height: 100vh;
     height: 100dvh;
     background: #FFFFFF;
     box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
-    padding: 84px 26px 30px;
+    padding: 84px 26px calc(30px + env(safe-area-inset-bottom));
     transform: translateX(105%);
     visibility: hidden;
     transition: transform 0.3s ease, visibility 0s linear 0.3s;
@@ -1427,13 +1449,17 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
   .floating-cta {
     left: 14px;
     right: 14px;
-    bottom: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
     text-align: center;
     justify-content: center;
     display: flex;
     padding: 15px 20px;
   }
-  .to-top { right: 14px; bottom: 76px; }
+  .to-top { right: 14px; bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+  /* 追従CTAバーでフッターの文字が隠れないよう余白を確保 */
+  .footer-bottom-inner { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .access-map iframe { height: 260px; }
 
   .btn-xl { padding: 17px 34px; font-size: 17px; }
   .last-cta { padding: 68px 0; }
@@ -1442,8 +1468,12 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
 @media (max-width: 480px) {
   .gallery-grid { grid-template-columns: 1fr; }
   .trial-summary { grid-template-columns: 1fr 1fr; }
-  .hero-title { font-size: 27px; }
+  .hero-title { font-size: 26px; }
+  .hero-badge { font-size: 13px; padding: 7px 16px; }
   .brand-name { font-size: 17px; }
   .brand-sub { font-size: 9px; }
   .brand-mark { width: 38px; height: 38px; }
+  .price-value { font-size: 29px; }
+  .price-card { padding: 26px 14px 22px; }
+  .container { padding: 0 18px; }
 }
